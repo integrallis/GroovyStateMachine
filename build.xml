@@ -1,0 +1,66 @@
+<project name="GroovyTest" default="test" basedir=".">
+  <property name="src.dir" value="${basedir}/src/main" />
+  <property name="tests.dir" value="${basedir}/src/test" />
+  <property name="lib.dir" value="${basedir}/lib" />
+  <property name="build.dir" value="${basedir}/target/classes" />
+  <property name="build.test.dir" value="${basedir}/target/test-classes" />
+  <property name="lib.dir" value="${basedir}/lib" />
+
+
+  <path id="build.path">
+    <fileset dir="lib">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <path id="test.build.path">
+    <fileset dir="lib">
+      <include name="*.jar"/>
+    </fileset>
+    <fileset dir="dist">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="build.path"/>
+
+  <target name="init">
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${build.test.dir}"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+    <delete dir="${build.test.dir}"/>
+  </target>
+
+  <target name="compile" depends="init">
+    <groovyc srcdir="${src.dir}" destdir="${build.dir}" classpathref="build.path"/>
+  </target>
+
+  <target name="compile-tests" depends="compile">
+    <groovyc srcdir="${tests.dir}" destdir="${build.test.dir}">
+      <classpath location="${build.dir}" />
+    </groovyc>
+  </target>
+
+
+  <target name="test" depends="compile-tests">
+    <junit haltonerror="true" haltonfailure="true" printsummary="no">
+      <classpath refid="build.path" />
+      <classpath location="${build.test.dir}" />
+      <classpath location="${build.dir}" />
+      <formatter type="plain" usefile="false" />
+
+      <batchtest>
+        <fileset dir="${build.test.dir}">
+          <include name="**/*Test*"/>
+          <exclude name="**/*$*"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+
+
+</project>
