@@ -9,6 +9,9 @@ class StateMachineTest extends GroovyTestCase {
 	void setUp() {
 		stateMachine = new StateMachine()
 		stateMachine.gsmState("state")
+		stateMachine.gsmEvent("event") {
+			transitions from:"a", to:"b"
+		}
 	}
 	
 	void testCreateState() {
@@ -16,6 +19,14 @@ class StateMachineTest extends GroovyTestCase {
 		stateMachine.createState("state")
 		assertEquals 1, stateMachine.states.size()
 		assertEquals "state", stateMachine.states.first().name
+	}
+	
+	void testCreateState_WithOptions() {
+		stateMachine = new StateMachine()
+		stateMachine.createState("state", enter:"doEnter", exit:"doExit")
+		assertEquals 1, stateMachine.states.size()
+		assertEquals "state", stateMachine.states.first().name
+		assert [enter:"doEnter", exit:"doExit"] ==  stateMachine.states.first().options
 	}
 	
 	void testCreateState_AssertNoDuplicates() {
@@ -41,7 +52,7 @@ class StateMachineTest extends GroovyTestCase {
 		stateMachine.gsmInitialState("initial")
 		stateMachine.gsmState("state") //set state again to make sure
 		
-		//initial state should be set
+		//initial state should be not be rese
 		assertEquals "initial", stateMachine.initialState
 	}
 	
@@ -65,5 +76,14 @@ class StateMachineTest extends GroovyTestCase {
 		shouldFail(UndefinedStateException) { 
 			stateMachine.stateObjectForState("non-existent") 
 		}
+	}
+	
+	void testGsmEvent_AssertNoDuplicates() {
+		stateMachine.gsmEvent("event", null)
+		assert 1 == stateMachine.events.size() //no duplicates
+	}
+	
+	void testGsmEvent_RespondsToFireMethod() {
+		assert stateMachine.respondsTo("fireEvent")
 	}
 }

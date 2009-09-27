@@ -5,10 +5,11 @@ class Transition {
 	def from
 	def to
 	def guard
+	def onTransition
 	def opts
 	
 	Transition(args) {
-		(from, to, guard) = [args.from, args.to, args.guard]
+		(from, to, guard, onTransition) = [args.from, args.to, args.guard, args.onTransition]
 		opts = args
 	}
 	
@@ -16,14 +17,26 @@ class Transition {
 		(from == other.from) && (to == other.to)
 	}
 	
-	boolean canTransition(callee) {
+	boolean canTransition(gsm) {
 		switch(guard) {
 	    case Closure:
-	        return callee.identity(guard)
+	        return gsm.with(guard)
 	    case String:
-	        return callee.metaClass.getMetaMethod(guard, null).invoke(callee, null)
+	        return gsm.invokeMethod(guard, null)
 	    default:
 	        return true
 	    }
+	}
+	
+	def execute(gsm, Object... args) {
+		switch(onTransition) {
+		case Closure:
+			onTransition.delegate = gsm
+			onTransition.call(gsm, *args)
+			break
+		case String:
+			gsm.invokeMethod(onTransition, args)
+			break
+		}
 	}
 }

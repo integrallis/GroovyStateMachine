@@ -8,13 +8,26 @@ class TransitionTest extends GroovyTestCase {
 	def trans
 
 	void setUp() {
-		trans = new Transition(from:"single", to:"dating", guard:"isWillingToCommit")
+		trans = new Transition(from:"single", to:"dating", guard:"isWillingToCommit", onTransition:"buyFlowers")
 	}
 	
 	void testConstruction() {
 		assert trans.from == "single"
 		assert trans.to == "dating"
 		assert trans.guard == "isWillingToCommit"
+		assert trans.onTransition == "buyFlowers"
+	}
+	
+	void testConstructor_WithMultipleFroms() {
+		trans = new Transition(from:["single", "divorced"], to:"dating")
+		assert trans.from == ["single", "divorced"]
+		assert trans.to == "dating"
+	}
+	
+	void testConstructor_WithMultipleTos() {
+		trans = new Transition(from:"single", to:["dating", "married"])
+		assert trans.from == "single"
+		assert trans.to == ["dating", "married"]
 	}
 
 	void testEquals() {
@@ -54,5 +67,31 @@ class TransitionTest extends GroovyTestCase {
 		mock.metaClass.isTrue = { true }
 		
 		assert trans.canTransition(mock)
+	}
+	
+	void testExecute_WithStringOnTransition() {
+		trans = new Transition(from:"single", to:"dating", onTransition:{ obj, arg -> obj.buyFlowers(arg) })
+		
+		def mock = new TransitionMock()
+		def obj = new Object()
+		trans.execute(mock, obj)
+		assert mock.result
+		assert obj == mock.argsPassed
+	}
+}
+
+class TransitionMock {
+	def result = false
+	def argsPassed
+	
+	def buyFlowers(Object args) {
+		result = true
+		argsPassed = args
+	}
+	
+	def getResult() {
+		def ret = result
+		result = false
+		ret
 	}
 }

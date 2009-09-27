@@ -2,23 +2,42 @@ package com.integrallis.groovystatemachine
 
 class StateMachine {
 	
-	String initialState
+	def initialState
 	String currentState
 	def states = []
-	def events = []
+	def events = [:]
 	
-	def createState(name) {
+	def createState(args=[:], String name) {
 		if(!states.find { it == name }) {
-			states << new State(name)
+			states << new State(args, name)
 		}
 	}
 	
-	def gsmInitialState(initialState=null) {
+	def getCurrentState() {
+		currentState?:determineStateName(initialState)
+	}
+	
+	def setCurrentState(state) {
+		currentState = state
+	}
+	
+	def determineStateName(state) {
+		switch(state) {
+		case Closure:
+			return gsm.with(state)
+			break
+		case String:
+        	return state			
+			break
+		}
+	}
+	
+	def gsmInitialState(def initialState) {
 		this.initialState = initialState
 	}
 	
-	def gsmState(state) {
-		createState(state)
+	def gsmState(args=[:], String state) {
+		createState(args, state)
 		//set initial set if not already set
 		if(!initialState) {
 			initialState = state
@@ -29,9 +48,55 @@ class StateMachine {
 		}
 	}
 	
-	def stateObjectForState(name) {
+	def stateObjectForState(String name) {
 		def obj = states.find { it == name }
 		if(!obj) throw new UndefinedStateException("State ${name} does not exist" as String)
 		obj
+	}
+	
+	def gsmEvent(options = [:], name, Closure transitions) {
+		if(!events[name]) {
+			events[name] = new Event(options, name, transitions)
+		}
+		
+		StateMachine.metaClass."fire${name.getAt(0).toUpperCase()}${name.substring(1)}" = { Object... args ->
+			fireEvent(name, args)
+		}
+	}
+	
+	def gsmEventFired(eventName, oldStateName, newStateName) {
+		//override for post-fire callback on success
+	}
+	
+	def gsmEventFailed(eventName, oldStateName) {
+		//override for post-fire callback on failure
+	}
+	
+	def fireEvent(name, args) {
+		def oldState = stateObjectForState(getCurrentState())
+		def event = events[name]
+		
+		oldState.callAction("exit", this)
+		
+		event.callAction("before", this)		
+		
+		def newStateName = event.fire(this, null, args)
+		
+		if(newStateName) {
+			def newState = stateObjectForState(newStateName)
+						
+			oldState.callAction("beforeExit", this)
+			newState.callAction("beforeEnter", this)
+			newState.callAction("enter", this)
+			
+			this.currentState = newStateName
+			
+			oldState.callAction("afterExit", this)
+			newState.callAction("afterEnter", this)
+			
+			gsmEventFired(name, oldState.name, getCurrentState())
+		} else {
+			gsmEventFailed(name, oldState.name)
+		}
 	}
 }
