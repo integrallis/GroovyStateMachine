@@ -14,7 +14,17 @@ class StateMachine {
 	}
 	
 	def getCurrentState() {
-		currentState?:determineStateName(initialState)
+		if(currentState) return currentState;
+		
+		def stateName = determineStateName(initialState)
+		def state = stateObjectForState(stateName)
+
+		state.callAction("before_enter", this)
+		state.callAction("enter", this)
+		this.currentState = stateName
+		state.callAction("after_enter", this)
+
+		return stateName
 	}
 	
 	def setCurrentState(state) {
@@ -24,15 +34,13 @@ class StateMachine {
 	def determineStateName(state) {
 		switch(state) {
 		case Closure:
-			return gsm.with(state)
-			break
+			return this.with(state)
 		case String:
         	return state			
-			break
 		}
 	}
 	
-	def gsmInitialState(def initialState) {
+	def gsmInitialState(initialState) {
 		this.initialState = initialState
 	}
 	

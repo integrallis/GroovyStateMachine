@@ -1,23 +1,17 @@
 package com.integrallis.groovystatemachine
 
 import groovy.util.GroovyTestCase
-import groovy.mock.interceptor.*
-
 
 class BeforeAfterTest extends GroovyTestCase {
 	
 	def beforeAfter
 	
 	void setUp() {
-		println "---- NEW -------"
 		beforeAfter = new BeforeAfter()
-		println "---- NEW ENDED -------"
 	}
 	
 	void testCloseCallbacks() {
-		println "--------------------"
 		beforeAfter.fireClose()
-		println "--------------------"		
 	}
 	
 	void testOpenCallBacks() {
@@ -25,7 +19,7 @@ class BeforeAfterTest extends GroovyTestCase {
 		beforeAfter.fireOpen()
 	}
 }
-//@Mixin(StateMachine)
+
 class BeforeAfter extends StateMachine {
 	{
 		gsmInitialState("open")
